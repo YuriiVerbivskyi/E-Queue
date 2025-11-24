@@ -284,3 +284,22 @@ main {
         font-size: 1.7rem;
     }
 }
+
+
+.form-control:disabled,
+.form-control[readonly] {
+    background-color: #e9ecef;
+    color: #1a1a2e;
+    -webkit-text-fill-color: #1a1a2e;
+    opacity: 1;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    cursor: not-allowed;
+}
+
+.input-wrapper:has(input:disabled) .input-icon {
+    color: #1a1a2e;
+    z-index: 11;
+}
+
+

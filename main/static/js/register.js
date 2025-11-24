@@ -31,11 +31,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
 
                 if (response.ok) {
-                    successMessage.textContent = 'Реєстрація успішна! Перенаправлення...';
+                    successMessage.textContent = 'Реєстрація успішна! Перенаправлення на логін...';
                     successMessage.classList.remove('d-none');
+
                     setTimeout(() => {
-                        window.location.href = '/';
-                    }, 2000);
+                        window.location.href = '/login/';
+                    }, 1500);
                 } else {
                     let errors = '';
                     for (let key in data) {

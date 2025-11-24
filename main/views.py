@@ -29,6 +29,9 @@ def register_user(request):
 def home(request):
     return render(request, 'index.html')
 
+def user_profile_page(request):
+    return render(request, 'profile.html')
+
 class QueueListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 

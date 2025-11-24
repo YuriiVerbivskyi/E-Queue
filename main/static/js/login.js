@@ -5,51 +5,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorMessage = document.getElementById('errorMessage');
     const successMessage = document.getElementById('successMessage');
 
-    if (form) {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
+    if (!form) return;
 
-            errorMessage.classList.add('d-none');
-            successMessage.classList.add('d-none');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
 
-            const formData = {
-                username: document.getElementById('username').value,
-                password: document.getElementById('password').value
-            };
+        errorMessage.classList.add('d-none');
+        successMessage.classList.add('d-none');
 
-            try {
-                const response = await fetch('/api/login/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
+        const formData = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        };
 
-                const data = await response.json();
+        try {
+            const response = await fetch('/api/login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
 
-                if (response.ok) {
-                    successMessage.textContent = 'Успішний вхід! Перенаправлення...';
-                    successMessage.classList.remove('d-none');
+            const data = await response.json();
 
-                    localStorage.setItem('access_token', data.access_token);
-                    localStorage.setItem('refresh_token', data.refresh_token);
+            if (response.ok) {
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('refresh_token', data.refresh_token);
 
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 2000);
-                } else {
-                    let errors = '';
-                    for (let key in data) {
-                        errors += `${key}: ${data[key]}\n`;
-                    }
-                    errorMessage.textContent = errors;
-                    errorMessage.classList.remove('d-none');
+                successMessage.textContent = 'Успішний вхід! Перенаправлення на головну...';
+                successMessage.classList.remove('d-none');
+
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+            } else {
+                let errors = '';
+                for (let key in data) {
+                    errors += `${key}: ${data[key]}\n`;
                 }
-            } catch (error) {
-                errorMessage.textContent = 'Помилка підключення до сервера';
+                errorMessage.textContent = errors;
                 errorMessage.classList.remove('d-none');
             }
-        });
-    }
+        } catch (err) {
+            errorMessage.textContent = 'Помилка підключення до сервера';
+            errorMessage.classList.remove('d-none');
+        }
+    });
 });

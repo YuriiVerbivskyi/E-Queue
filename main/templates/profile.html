@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Мій Профіль - E-Queue{% endblock %}
+
+{% block content %}
+<section class="register-section">
+    <div class="container d-flex justify-content-center align-items-center min-vh-100 py-5">
+        <div class="register-card">
+
+            <h2 class="text-center mb-4">
+                <i class="fas fa-user-circle"></i> Мій Профіль
+            </h2>
+
+            <div id="profile-info">
+
+                <div class="mb-4">
+                    <label class="form-label">Ім'я користувача</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user input-icon" style="color: #667eea;"></i>
+                        <input type="text" class="form-control" id="profile-username" disabled>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Email</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope input-icon" style="color: #667eea;"></i>
+                        <input type="text" class="form-control" id="profile-email" disabled>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Роль</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-id-badge input-icon" style="color: #667eea;"></i>
+                        <input type="text" class="form-control" id="profile-role" disabled>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="profile-status" class="text-center text-muted">
+                Завантаження...
+            </div>
+
+            <button id="logoutBtn" class="btn btn-danger w-100 mt-4">
+                Вийти
+            </button>
+
+        </div>
+    </div>
+</section>
+{% endblock %}
