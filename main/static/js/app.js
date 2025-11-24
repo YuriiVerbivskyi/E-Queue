@@ -25,7 +25,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
 
-        if (!response.ok) return;
+        if (!response.ok){
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+
+            if (window.location.pathname === '/profile/') {
+                window.location.href = "/login/"
+            }
+            return;
+        }
 
         const data = await response.json();
 
@@ -50,8 +58,32 @@ document.addEventListener('DOMContentLoaded', async function() {
             e.preventDefault();
             handleLogout();
         });
+
+        const inputUsername = document.getElementById('profile-username');
+        const inputEmail = document.getElementById('profile-email');
+        const inputRole = document.getElementById('profile-role');
+        const statusDiv = document.getElementById('profile-status');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        if (inputUsername) {
+            inputUsername.value = data.username;
+            inputEmail.value = data.email;
+            inputRole.value = data.role || 'Користувач';
+            if (statusDiv) statusDiv.style.display = 'none';
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleLogout();
+                });
+            }
+        }
+
     } catch (e) {
         console.error("Auth check failed (Error in JSON parsing or DOM update):", e);
+        if (profileInfo) {
+             profileInfo.innerHTML = `<p class="text-danger">Помилка завантаження даних.</p>`;
+        }
     }
 });
 function handleLogout() {

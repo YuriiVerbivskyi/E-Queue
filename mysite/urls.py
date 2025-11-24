@@ -7,7 +7,7 @@ from main import views as main_views
 urlpatterns = [
     path('', main_views.home, name='home'),
     path('register/', main_views.register_user, name='register_page'),
-    path('profile/', main_views.user_profile, name='user_profile'),
+    path('profile/', main_views.user_profile_page, name='user_profile'),
     path('login/', main_views.login_page, name='login_page'),
     path('admin/', admin.site.urls),
     path('api/', include('main.urls')),
