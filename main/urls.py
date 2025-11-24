@@ -7,15 +7,6 @@ from rest_framework import permissions
 
 
 
-schema_view = get_schema_view(
-    openapi.Info(
-        title="E-Queue API",
-        default_version='v1',
-        description="API documentaion",
-    ),
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
 urlpatterns = [
     path('queues/', views.QueueListView.as_view(), name='queues'),
     path('queues/<int:pk>/', views.QueueDetailView.as_view(), name='queue_detail'),
@@ -27,6 +18,4 @@ urlpatterns = [
     path('register/', views.Register.as_view(), name='register_api'),
     path('login/', views.LoginView.as_view(), name='login_api'),
     path('profile/', views.user_profile, name='user_profile_api'),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
