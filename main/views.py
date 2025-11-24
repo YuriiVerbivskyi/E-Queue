@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -12,10 +12,16 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from django.shortcuts import render
 from .serializers import CustomUserSerializer, QueueSerializer, QueueEntrySerializer
-from .permissions import IsQueueOwnerOrAdmin, IsAuthenticatedOrReadOnly
+from .permissions import IsQueueOwnerOrAdmin, IsAuthenticatedOrReadOnly, IsTeacherOrAdmin
 from .models import Queue, QueueEntry
+import uuid
+import json
+from twilio.rest import Client
+from django.contrib.auth import get_user_model
+from django.contrib.auth import login
 
 
+all_students = []
 
 def register_user(request):
     return render(request, 'register.html')
@@ -117,6 +123,13 @@ class Register(APIView):
             return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        user = serializer.save()
+        return Response(
+            {"message": "Success registration", "user_id": user.id},
+            status=status.HTTP_201_CREATED
+        )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_profile(request):
@@ -139,6 +152,10 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
+            
+            # логінимо через сесію
+            login(request, user)  
+
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
 
@@ -149,3 +166,136 @@ class LoginView(APIView):
             }, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def get_last_transs():
+        headers = {
+            "accept": "application/json",
+            "x-token": "usqbA76ff6U0Fi6Z_QL3t2Xmh42lYCOUQ9h9v2PW51nM"
+        }
+        account_id = "WEzuUgHoGQVlmHaHagiU0w" 
+        start = 1759622400
+        end = 1762214400
+        url = f"https://api.monobank.ua/personal/statement/{account_id}/{start}/{end}"
+        r = requests.get(url, headers=headers)
+        ans = r.json()
+        last_transs = []
+        try:
+            for i in ans:
+                last_transs.append({i["description"]: i["amount"]})
+            return last_transs
+        except Exception as e:
+            return e
+
+class MonoData(APIView):
+    def get(self, requests, data):
+        if data == "trans":
+            print("gettting last transs..")
+            last_trns = get_last_transs()
+            print(last_trns)
+
+
+        elif data == "balance":
+            print("current balance")
+        else:
+            print("doesn't exist")
+            return redirect("/")
+
+        return JsonResponse({"status": "ok"})
+
+def get_last_transs():
+        headers = {
+            "accept": "application/json",
+            "x-token": "usqbA76ff6U0Fi6Z_QL3t2Xmh42lYCOUQ9h9v2PW51nM"
+        }
+        account_id = "WEzuUgHoGQVlmHaHagiU0w" 
+        start = 1759622400
+        end = 1762214400
+        url = f"https://api.monobank.ua/personal/statement/{account_id}/{start}/{end}"
+        r = requests.get(url, headers=headers)
+        ans = r.json()
+        last_transs = []
+        try:
+            for i in ans:
+                last_transs.append({i["description"]: i["amount"]})
+            return last_transs
+        except Exception as e:
+            return e
+
+class MonoData(APIView):
+    def get(self, requests, data):
+        if data == "trans":
+            print("gettting last transs..")
+            last_trns = get_last_transs()
+            print(last_trns)
+
+
+        elif data == "balance":
+            print("current balance")
+        else:
+            print("doesn't exist")
+            return redirect("/")
+
+        return JsonResponse({"status": "ok"})
+
+def queues(request):
+
+    user = request.user
+    user.is_staff
+    user.is_superuser
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    if user.is_staff == True or user.is_superuser == True:
+        current = "admin"
+    else:
+        current = "student"
+
+    current = "admin"
+
+
+    if current == "admin":
+        ck = uuid.uuid4().hex
+        cntxt = {
+            "status": current,
+            "auth": ck,
+            "num": 0,
+        }
+    else:
+        cntxt = {
+            "status": current
+        }
+
+    request.session["ck"] = ck
+
+
+    User = get_user_model()
+    for u in User.objects.all():
+        if u.is_staff == False:
+            if u.is_superuser == False:
+                all_students.append(u.username)
+
+    return render(request, "queues.html", cntxt)
+
+def next_student(request):
+
+    body = json.loads(request.body)
+
+    if request.session.get("ck") == body.get("ck"):
+        if not all_students:
+            return JsonResponse({'ok': "No more students"}, status=400)
+        current = all_students.pop()
+        print(current)
+        return JsonResponse({'ok': current}, status=200)
+    else:
+        return JsonResponse({'ok': "False"}, status=400)
+
+
+    account_sid = ''
+    auth_token = ''
+    client = Client(account_sid, auth_token)
+    message = client.messages.create(
+      messaging_service_sid='',
+      body='u are next',
+      to='phoneNum'
+    )
+
