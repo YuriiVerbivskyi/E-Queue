@@ -40,9 +40,9 @@
                 <div id="errorMessage" class="alert alert-danger d-none"></div>
                 <div id="successMessage" class="alert alert-success d-none"></div>
                 <button type="submit" class="btn btn-primary w-100">Зареєструватися</button>
-                <p class="text-center mt-3 already-have">
-                    Вже є акаунт? <a href="/login">Увійти</a>
-                </p>
+               <p class="text-center mt-3">
+                    Вже є акаунт? <a href="{% url 'login_page' %}" class="fw-bold">Увійти</a>
+               </p>
             </form>
         </div>
     </div>

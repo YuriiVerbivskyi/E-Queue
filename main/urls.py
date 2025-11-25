@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 from . import views
+from rest_framework import permissions
 
 urlpatterns = [
     path('', views.home, name='home'),

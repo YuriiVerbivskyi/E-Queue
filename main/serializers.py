@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from main.models import CustomUser, Queue, QueueEntry, Notification
@@ -32,6 +33,31 @@ class CustomUserSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+
+    def validate(self, data):
+        username = data.get('username')
+        password = data.get('password')
+
+        if username and password:
+            user = authenticate(username=username, password=password)
+            if user:
+                if not user.is_active:
+                    raise serializers.ValidationError("Користувач не активований")
+                data['user'] = user
+            else:
+                raise serializers.ValidationError("Невірне ім'я користувача або пароль")
+        else:
+            raise serializers.ValidationError("Вкажіть ім'я користувача та пароль")
+
+        return data
+
+
+
 
 
 class QueueSerializer(serializers.ModelSerializer):
