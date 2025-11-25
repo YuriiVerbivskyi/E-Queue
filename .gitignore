@@ -22,3 +22,9 @@ Thumbs.db
 htmlcov/
 .coverage.*
 .cache
+pytest_cache/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.tox/

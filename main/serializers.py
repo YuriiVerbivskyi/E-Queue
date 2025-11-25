@@ -3,14 +3,13 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from main.models import CustomUser, Queue, QueueEntry, Notification
 
-
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'password', 'password2')
+        fields = ('id', 'username', 'email', 'password', 'password2', 'role')
         extra_kwargs = {
             'email': {'required': True},
             'username': {'required': True}
@@ -27,13 +26,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password2')
+        role = validated_data.get('role', 'student')
         user = CustomUser.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
-            password=validated_data['password']
+            password=validated_data['password'],
+            role=role
         )
         return user
-
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
@@ -56,23 +56,21 @@ class LoginSerializer(serializers.Serializer):
 
         return data
 
-
-
-
-
 class QueueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Queue
         fields = '__all__'
         read_only_fields = ('created_by', 'created_at')
-
+        extra_kwargs = {
+            'name': {'required': True, 'allow_blank': False},
+            'scheduled_time': {'required': True}
+        }
 
 class QueueEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = QueueEntry
         fields = '__all__'
         read_only_fields = ('user', 'created_at')
-
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:

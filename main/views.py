@@ -1,3 +1,4 @@
+from django.contrib.sites import requests
 from django.http import HttpResponse, JsonResponse
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
@@ -5,8 +6,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
-from django.shortcuts import render, redirect
-
+from django.shortcuts import render, redirect, get_object_or_404
 from .serializers import (
     CustomUserSerializer,
     LoginSerializer,
@@ -49,7 +49,7 @@ class QueueListView(APIView):
 class QueueDetailView(APIView):
     permission_classes = [IsQueueOwnerOrAdmin]
     def get_object(self, pk):
-        return Queue.objects.get(pk=pk)
+        return get_object_or_404(Queue, pk=pk)
     def get(self, request, pk):
         queue = self.get_object(pk)
         serializer = QueueSerializer(queue)
@@ -99,7 +99,7 @@ class QueueEntryListView(APIView):
 class QueueEntryDetailView(APIView):
     permission_classes = [IsAuthenticated]
     def get_object(self, pk):
-        return QueueEntry.objects.get(pk=pk)
+        return get_object_or_404(QueueEntry, pk=pk)
     def get(self, request, pk):
         entry = self.get_object(pk)
         serializer = QueueEntrySerializer(entry)
@@ -126,13 +126,10 @@ class NotificationListView(APIView):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_notification_as_read(request, notification_id):
-    try:
-        notification = Notification.objects.get(id=notification_id, user=request.user)
-        notification.is_read = True
-        notification.save()
-        return Response({'status': 'marked as read'}, status=status.HTTP_200_OK)
-    except Notification.DoesNotExist:
-        return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    return Response({'status': 'marked as read'}, status=status.HTTP_200_OK)
 
 class Register(APIView):
     permission_classes = [AllowAny]
@@ -178,8 +175,8 @@ class LoginView(APIView):
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
             return Response({
-                'access_token': str(access_token),
-                'refresh_token': str(refresh),
+                'access': str(access_token),
+                'refresh': str(refresh),
                 'username': user.username
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

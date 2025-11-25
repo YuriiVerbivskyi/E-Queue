@@ -1,9 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.utils import timezone
-
 
 class CustomUser(AbstractUser):
+    ROLE_CHOICES = (
+        ('student', 'Student'),
+        ('teacher', 'Teacher'),
+        ('admin', 'Admin'),
+    )
+    role = models.CharField(max_length=16, choices=ROLE_CHOICES, default='student')
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='customuser_groups',
@@ -15,21 +19,29 @@ class CustomUser(AbstractUser):
         blank=True
     )
 
-
 class Queue(models.Model):
     name = models.CharField(max_length=200, default='Default Queue')
     description = models.TextField(blank=True, default='')
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=1)
     created_at = models.DateTimeField(auto_now_add=True)
+    scheduled_time = models.DateTimeField(null=True, blank=True)
+    max_slots = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
 
-
 class QueueEntry(models.Model):
+    STATUS_CHOICES = (
+        ('waiting', 'Waiting'),
+        ('ready', 'Ready'),
+        ('completed', 'Completed'),
+        ('no_show', 'No Show'),
+    )
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     queue = models.ForeignKey(Queue, on_delete=models.CASCADE)
     position = models.IntegerField(default=0)
+    status = models.CharField(max_length=24, choices=STATUS_CHOICES, default='waiting')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -37,7 +49,6 @@ class QueueEntry(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.queue.name}"
-
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
