@@ -285,7 +285,6 @@ main {
     }
 }
 
-
 .form-control:disabled,
 .form-control[readonly] {
     background-color: #e9ecef;
@@ -301,3 +300,76 @@ main {
     color: #1a1a2e;
     z-index: 11;
 }
+
+
+.profile-card {
+    max-width: 500px !important;
+}
+
+.profile-header {
+    margin-bottom: 2rem;
+}
+
+.profile-avatar {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+}
+
+.profile-title {
+    background: linear-gradient(135deg, #667eea, #fc5c7d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    font-size: 2rem;
+    margin: 0;
+}
+
+.profile-email {
+    color: rgba(255, 255, 255, 0.9) !important;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #ee5a6f, #ff6b6b);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+    color: white;
+}
+
+.btn-danger:active {
+    transform: translateY(-1px);
+}
+
+.profile-card .form-control:disabled,
+.profile-card .form-control[readonly] {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.85);
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.85);
+    opacity: 1;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: not-allowed;
+    text-align: center;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 1rem;
+}
+
+.profile-card .form-label {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    display: block;
+}
+

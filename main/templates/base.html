@@ -19,10 +19,31 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="/">Головна</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/queues">Черги</a></li>
-                    <li class="nav-item" id="nav-auth">
-                        <a class="nav-link" href="/login/">Вхід/Реєстрація</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="/queues/">Черги</a></li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown" id="nav-auth">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                 {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="/profile/">Профіль</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="/logout/" style="margin:0;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item">Вихід</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/register-page/">Реєстрація</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/login/">Вхід</a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

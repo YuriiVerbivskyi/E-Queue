@@ -25,18 +25,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(formData),
+                    credentials: 'include'
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    successMessage.textContent = 'Реєстрація успішна! Перенаправлення на логін...';
+                    successMessage.textContent = 'Реєстрація успішна! Перенаправлення...';
                     successMessage.classList.remove('d-none');
 
                     setTimeout(() => {
-                        window.location.href = '/login/';
-                    }, 1500);
+                        window.location.href = '/queues/';
+                    }, 1000);
                 } else {
                     let errors = '';
                     for (let key in data) {

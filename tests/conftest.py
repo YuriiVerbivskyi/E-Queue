@@ -3,10 +3,10 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 from main.models import Queue, QueueEntry, Notification
-from datetime import datetime, timedelta
+from django.utils import timezone
+from datetime import timedelta
 
 User = get_user_model()
-
 
 @pytest.fixture
 def api_client():
@@ -25,7 +25,6 @@ def admin_user(db):
     )
     return user
 
-
 @pytest.fixture
 def teacher_user(db):
     user = User.objects.create_user(
@@ -36,7 +35,6 @@ def teacher_user(db):
     )
     return user
 
-
 @pytest.fixture
 def student_user(db):
     user = User.objects.create_user(
@@ -46,7 +44,6 @@ def student_user(db):
         role='student'
     )
     return user
-
 
 @pytest.fixture
 def student_user_2(db):
@@ -65,13 +62,11 @@ def authenticated_client(api_client, student_user):
     api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
     return api_client
 
-
 @pytest.fixture
 def authenticated_teacher_client(api_client, teacher_user):
     refresh = RefreshToken.for_user(teacher_user)
     api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
     return api_client
-
 
 @pytest.fixture
 def authenticated_admin_client(api_client, admin_user):
@@ -86,12 +81,11 @@ def queue(db, teacher_user):
         name='Lab Defense #3',
         description='Testing lab defense',
         created_by=teacher_user,
-        scheduled_time=datetime.now() + timedelta(hours=2),
+        scheduled_time=timezone.now() + timedelta(hours=2),
         max_slots=5,
         is_active=True
     )
     return queue
-
 
 @pytest.fixture
 def queue_inactive(db, teacher_user):
@@ -99,12 +93,11 @@ def queue_inactive(db, teacher_user):
         name='Past Queue',
         description='Old queue',
         created_by=teacher_user,
-        scheduled_time=datetime.now() - timedelta(hours=2),
+        scheduled_time=timezone.now() - timedelta(hours=2),
         max_slots=5,
         is_active=False
     )
     return queue
-
 
 @pytest.fixture
 def queue_entry(db, queue, student_user):
@@ -115,7 +108,6 @@ def queue_entry(db, queue, student_user):
         status='waiting'
     )
     return entry
-
 
 @pytest.fixture
 def notification(db, student_user):

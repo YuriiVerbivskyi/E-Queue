@@ -5,47 +5,44 @@
 {% block content %}
 <section class="register-section">
     <div class="container d-flex justify-content-center align-items-center min-vh-100 py-5">
-        <div class="register-card">
+        <div class="register-card profile-card" style="max-width: 500px;">
 
-            <h2 class="text-center mb-4">
-                <i class="fas fa-user-circle"></i> Мій Профіль
-            </h2>
+            <div class="text-center mb-4 profile-header">
+                <div class="profile-avatar"></div>
+                <h2 class="profile-title">Мій Профіль</h2>
+            </div>
 
             <div id="profile-info">
 
                 <div class="mb-4">
-                    <label class="form-label">Ім'я користувача</label>
+                    <label class="form-label">👤 Ім'я користувача</label>
                     <div class="input-wrapper">
-                        <i class="fas fa-user input-icon" style="color: #667eea;"></i>
-                        <input type="text" class="form-control" id="profile-username" disabled>
+                        <input type="text" class="form-control" id="profile-username" disabled value="{{ profile_username }}">
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label">Email</label>
+                    <label class="form-label">✉️ Email</label>
                     <div class="input-wrapper">
-                        <i class="fas fa-envelope input-icon" style="color: #667eea;"></i>
-                        <input type="text" class="form-control" id="profile-email" disabled>
+                        <input type="email" class="form-control profile-email" id="profile-email" disabled value="{{ profile_email }}">
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label">Роль</label>
+                    <label class="form-label">🔐 Роль</label>
                     <div class="input-wrapper">
-                        <i class="fas fa-id-badge input-icon" style="color: #667eea;"></i>
-                        <input type="text" class="form-control" id="profile-role" disabled>
+                        <input type="text" class="form-control" id="profile-role" disabled value="{{ profile_role }}">
                     </div>
                 </div>
 
             </div>
 
-            <div id="profile-status" class="text-center text-muted">
-                Завантаження...
-            </div>
-
-            <button id="logoutBtn" class="btn btn-danger w-100 mt-4">
-                Вийти
-            </button>
+            <form method="post" action="/logout/" style="width: 100%;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger w-100 mt-4">
+                    Вийти
+                </button>
+            </form>
 
         </div>
     </div>
