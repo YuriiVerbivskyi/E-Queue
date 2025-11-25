@@ -184,7 +184,6 @@ class LoginView(APIView):
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-      
 def get_last_transs():
     headers = {
         "accept": "application/json",
