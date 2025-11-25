@@ -3,23 +3,37 @@
 {% block title %}Вхід - E-Queue{% endblock %}
 
 {% block content %}
-<section class="login-section">
-    <div class="container d-flex justify-content-center">
-        <div class="login-card">
-            <h2 class="text-center mb-4">Вхід</h2>
+<section class="register-section">
+    <div class="container d-flex justify-content-center align-items-center min-vh-100 py-5">
+        <div class="register-card">
+            <h2 class="text-center">Увійти</h2>
+
             <form id="loginForm">
-                <div class="mb-3">
-                    <label for="username" class="form-label">Ім'я користувача</label>
-                    <input type="text" class="form-control" id="username" name="username" required>
+
+                <div class="mb-4">
+                    <label for="username" class="form-label">Ім'я користувача або Email</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user input-icon" style="color: #667eea;"></i>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Введіть ім'я користувача або Email" required>
+                    </div>
                 </div>
-                <div class="mb-3">
+
+                <div class="mb-4">
                     <label for="password" class="form-label">Пароль</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock input-icon" style="color: #667eea;"></i>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Введіть пароль" required>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Увійти</button>
+
+                <div id="errorMessage" class="alert alert-danger d-none mt-3"></div>
+                <div id="successMessage" class="alert alert-success d-none mt-3"></div>
+
+                <button type="submit" class="btn btn-primary w-100 mt-4">Увійти</button>
             </form>
-            <p class="text-center mt-3">
-                Немає акаунта? <a href="/register">Зареєструватися</a>
+
+            <p class="text-center mt-3 already-have">
+                Немає акаунту? <a href="/register">Зареєструватися</a>
             </p>
         </div>
     </div>

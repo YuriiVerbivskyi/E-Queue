@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Queue{% endblock %}
+
+{% block content %}
+<section class="login-section">
+    <div class="container d-flex justify-content-center">
+        <div class="login-card">
+            <h2 class="text-center mb-4">Queue</h2>
+
+            {% if status == "admin" %}
+                <h4>ваш статус — адмін</h4>
+                <button id="nextBtn" class="btn btn-primary btn-lg mt-4" type="button">Відправити попередження та відобразити наступного</button>
+                <h5 class="mt-3">Зараз: <span id="currentStudent">—</span></h5>
+
+                <script>
+                document.getElementById('nextBtn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    fetch('/next_student/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ 'ck': '{{ auth }}'})
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.ok) {
+                            document.getElementById('currentStudent').innerText = data.ok;
+                        } else {
+                            document.getElementById('currentStudent').innerText = data.message || '—';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Fetch error:', err);
+                        document.getElementById('currentStudent').innerText = 'Error';
+                    });
+                });
+                </script>
+
+            {% else %}
+                <h4>ваш статус — студент</h4>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
