@@ -1,5 +1,22 @@
+import uuid
+import random
+import string
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, User
+
+
+def generate_short_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+class Queue(models.Model):
+    title = models.CharField(max_length=255)
+    code = models.CharField(max_length=10, default=generate_short_code, unique=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+
+def generate_room_id():
+    length = 6
+    characters = string.ascii_uppercase + string.digits
+    return ''.join(random.choices(characters, k=length))
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
@@ -8,6 +25,7 @@ class CustomUser(AbstractUser):
         ('admin', 'Admin'),
     )
     role = models.CharField(max_length=16, choices=ROLE_CHOICES, default='student')
+    phone = models.CharField(max_length=20, blank=True, null=True)
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='customuser_groups',
@@ -19,6 +37,22 @@ class CustomUser(AbstractUser):
         blank=True
     )
 
+    def __str__(self):
+        return self.username
+
+class Room(models.Model):
+    id = models.CharField(max_length=8, primary_key=True, default=generate_room_id, editable=False)
+    name = models.CharField(max_length=200)
+    teacher = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='rooms')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} ({self.id})"
+
 class Queue(models.Model):
     name = models.CharField(max_length=200, default='Default Queue')
     description = models.TextField(blank=True, default='')
@@ -27,6 +61,9 @@ class Queue(models.Model):
     scheduled_time = models.DateTimeField(null=True, blank=True)
     max_slots = models.PositiveIntegerField(default=1)
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
         return self.name
@@ -39,7 +76,8 @@ class QueueEntry(models.Model):
         ('no_show', 'No Show'),
     )
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    queue = models.ForeignKey(Queue, on_delete=models.CASCADE)
+    queue = models.ForeignKey(Queue, on_delete=models.CASCADE, null=True, blank=True)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, null=True, blank=True, related_name='entries')
     position = models.IntegerField(default=0)
     status = models.CharField(max_length=24, choices=STATUS_CHOICES, default='waiting')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -48,7 +86,7 @@ class QueueEntry(models.Model):
         ordering = ['created_at']
 
     def __str__(self):
-        return f"{self.user.username} - {self.queue.name}"
+        return f"{self.user.username} - Pos {self.position}"
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = [

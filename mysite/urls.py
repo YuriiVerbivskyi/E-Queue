@@ -24,6 +24,8 @@ urlpatterns = [
     path('api/', include('main.urls')),
     path('login/', views.login_page, name='login_page'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('queues/', views.queues, name='queues'),
+    path('next_student/', views.next_student, name='next_student'),
 ]
 
 if settings.DEBUG:

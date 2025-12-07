@@ -1,129 +1,274 @@
+import json
+import os
+import uuid
+import requests
+from django.contrib.auth import get_user_model, login, logout
 from django.http import HttpResponse, JsonResponse
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework import status
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from dotenv import load_dotenv
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from twilio.rest import Client
+
+from .models import Queue, QueueEntry, Notification, CustomUser, Room
+from .permissions import IsQueueOwnerOrAdmin, IsAuthenticatedOrReadOnly
 from .serializers import (
     CustomUserSerializer,
     LoginSerializer,
     QueueSerializer,
     QueueEntrySerializer,
-    NotificationSerializer
+    NotificationSerializer,
+    RoomSerializer,
+    QueueEntryDetailSerializer,
 )
-from .permissions import IsQueueOwnerOrAdmin, IsAuthenticatedOrReadOnly
-from .models import Queue, QueueEntry, Notification, CustomUser
 from .utils import send_notification_email
-import uuid
-import json
-import requests
-from django.contrib.auth import get_user_model, login, logout
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Room
+
+load_dotenv()
 
 def logout_view(request):
     logout(request)
-    return redirect('/')
+    return redirect("/")
 
 def login_page(request):
-    return render(request, 'login.html')
-
-all_students = []
-
+    return render(request, "login.html")
 
 def register_user(request):
-    return render(request, 'register.html')
-
+    return render(request, "register.html")
 
 def home(request):
-    return render(request, 'index.html')
+    return render(request, "index.html")
 
-
-@login_required(login_url='/login/')
-def user_profile_page(request):
-    user = request.user
-    return render(request, 'profile.html', {
-        'profile_username': user.username,
-        'profile_email': user.email,
-        'profile_role': getattr(user, 'role', 'student')
-    })
-
-
-@login_required(login_url='/login/')
-@login_required(login_url='/login/')
+@login_required(login_url="/login/")
 def user_profile_page(request):
     user = request.user
     email = user.email if user.email else "Не вказано"
-
-    return render(request, 'profile.html', {
-        'profile_username': user.username,
-        'profile_email': email,
-        'profile_role': getattr(user, 'role', 'student')
-    })
-
+    return render(
+        request,
+        "profile.html",
+        {
+            "profile_username": user.username,
+            "profile_email": email,
+            "profile_role": getattr(user, "role", "student"),
+        },
+    )
 
 def queue_page(request):
     user = request.user
-    if user.is_staff or user.is_superuser or getattr(user, 'role', '') == 'admin':
+    if user.is_staff or user.is_superuser or getattr(user, "role", "") == "admin":
         status_type = "admin"
         ck = uuid.uuid4().hex
         context = {
             "status": status_type,
             "auth": ck,
-            "num": 0
-        }
-        request.session["ck"] = ck
-    else:
-        status_type = "student"
-        context = {
-            "status": status_type
-        }
-    return render(request, "queue.html", context)
-
-
-@login_required(login_url='/login/')
-def queues(request):
-    user = request.user
-    if user.is_staff or user.is_superuser or getattr(user, 'role', '') == 'admin':
-        current_status = "admin"
-        ck = uuid.uuid4().hex
-        cntxt = {
-            "status": current_status,
-            "auth": ck,
             "num": 0,
         }
         request.session["ck"] = ck
     else:
-        current_status = "student"
-        cntxt = {"status": current_status}
+        status_type = "student"
+        context = {"status": status_type}
+    return render(request, "queue.html", context)
 
-    if not all_students:
-        User = get_user_model()
-        for u in User.objects.all():
-            if not u.is_staff and not u.is_superuser:
-                all_students.append(u.username)
+@login_required(login_url="/login/")
+def queues(request):
+    user = request.user
+    is_teacher = user.is_staff or user.is_superuser or getattr(user, "role", "") in ["admin", "teacher"]
 
-    return render(request, "queues.html", cntxt)
+    context = {
+        "status": "admin" if is_teacher else "student",
+        "user_role": getattr(user, "role", "student"),
+    }
 
+    if is_teacher:
+        context["auth"] = uuid.uuid4().hex
+        request.session["ck"] = context["auth"]
+        context["rooms"] = Room.objects.filter(teacher=user, is_active=True)
+    else:
+        context["available_rooms"] = Room.objects.filter(is_active=True)
+
+    return render(request, "queues.html", context)
+
+@csrf_exempt
+@login_required(login_url="/login/")
+def create_room(request):
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "message": "Method not allowed"}, status=405)
+
+    user = request.user
+    if not (user.is_staff or user.is_superuser or getattr(user, "role", "") in ["teacher", "admin"]):
+        return JsonResponse({"ok": False, "message": "Forbidden"}, status=403)
+
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+        name = body.get("name", "").strip()
+
+        if not name:
+            return JsonResponse({"ok": False, "message": "Назва кімнати обов'язкова"}, status=400)
+
+        room = Room.objects.create(name=name, teacher=user)
+        return JsonResponse({
+            "ok": True,
+            "id": room.id,
+            "name": room.name
+        }, status=201)
+    except Exception as e:
+        return JsonResponse({"ok": False, "message": str(e)}, status=500)
+
+@csrf_exempt
+@login_required(login_url="/login/")
+def join_room(request):
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "message": "Method not allowed"}, status=405)
+
+    user = request.user
+
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+        room_id = body.get("room_id", "").strip()
+
+        if not room_id:
+            return JsonResponse({"ok": False, "message": "room_id required"}, status=400)
+
+        try:
+            room = Room.objects.get(id=room_id, is_active=True)
+        except Room.DoesNotExist:
+            return JsonResponse({"ok": False, "message": "Кімната не знайдена"}, status=404)
+
+        existing = QueueEntry.objects.filter(
+            user=user, room=room, status__in=['waiting', 'ready']
+        ).first()
+        if existing:
+            return JsonResponse({"ok": False, "message": "Ви вже в цій черзі"}, status=400)
+
+        position = QueueEntry.objects.filter(
+            room=room, status__in=['waiting', 'ready']
+        ).count() + 1
+
+        entry = QueueEntry.objects.create(
+            user=user,
+            room=room,
+            position=position,
+            status='waiting'
+        )
+
+        return JsonResponse({
+            "ok": True,
+            "room_id": room.id,
+            "room_name": room.name,
+            "position": position
+        }, status=201)
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": False, "message": "Invalid JSON"}, status=400)
+    except Exception as e:
+        return JsonResponse({"ok": False, "message": str(e)}, status=500)
+
+@csrf_exempt
+@login_required(login_url="/login/")
+def get_room_entries(request):
+    if request.method != "GET":
+        return JsonResponse({"ok": False}, status=405)
+
+    room_id = request.GET.get("room_id")
+
+    if not room_id:
+        return JsonResponse({"ok": False, "message": "room_id required"}, status=400)
+
+    try:
+        room = Room.objects.get(id=room_id)
+    except Room.DoesNotExist:
+        return JsonResponse({"ok": False, "message": "Room not found"}, status=404)
+
+    if room.teacher != request.user:
+        return JsonResponse({"ok": False, "message": "Not authorized"}, status=403)
+
+    entries = room.entries.filter(status__in=['waiting', 'ready']).order_by('created_at')
+    serializer = QueueEntryDetailSerializer(entries, many=True)
+
+    return JsonResponse(serializer.data, safe=False)
+
+@csrf_exempt
+@login_required(login_url="/login/")
+def next_student_in_room(request):
+    if request.method != "POST":
+        return JsonResponse({"ok": False}, status=405)
+
+    user = request.user
+
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": False}, status=400)
+
+    room_id = body.get("room_id")
+
+    if not room_id:
+        return JsonResponse({"ok": False, "message": "room_id required"}, status=400)
+
+    try:
+        room = Room.objects.get(id=room_id)
+    except Room.DoesNotExist:
+        return JsonResponse({"ok": False, "message": "Room not found"}, status=404)
+
+    if room.teacher != user:
+        return JsonResponse({"ok": False, "message": "Not authorized"}, status=403)
+
+    next_entry = room.entries.filter(status='waiting').order_by('created_at').first()
+
+    if not next_entry:
+        return JsonResponse({"ok": False, "message": "No more students"}, status=400)
+
+    current_user = next_entry.user
+    phone = current_user.phone or "+380961094823"
+
+    try:
+        load_dotenv()
+        account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+        auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+
+        if account_sid and auth_token:
+            client = Client(account_sid, auth_token)
+            client.messages.create(
+                messaging_service_sid="MG4d6d820583ad25d5869d436712ffa6ee",
+                body=f"E-Queue: {room.name} - Ти наступний!",
+                to=phone,
+            )
+    except Exception as e:
+        print(f"Twilio Error: {e}")
+
+    next_entry.status = 'ready'
+    next_entry.save()
+
+    remaining = room.entries.filter(status='waiting').order_by('created_at')
+    for idx, entry in enumerate(remaining, 1):
+        entry.position = idx
+        entry.save()
+
+    return JsonResponse({
+        "ok": True,
+        "current_student": f"{current_user.first_name or current_user.username} {current_user.last_name or ''}".strip()
+    }, status=200)
 
 @csrf_exempt
 def next_student(request):
-    if request.method == "POST":
-        try:
-            body = json.loads(request.body)
-            if request.session.get("ck") == body.get("ck"):
-                if not all_students:
-                    return JsonResponse({'ok': False, 'message': "No more students"}, status=200)
-                current = all_students.pop(0)
-                return JsonResponse({'ok': current}, status=200)
-            else:
-                return JsonResponse({'ok': False, 'message': "Auth failed"}, status=403)
-        except Exception as e:
-            return JsonResponse({'ok': False, 'message': str(e)}, status=400)
-    return JsonResponse({'ok': False, 'message': "Method not allowed"}, status=405)
+    if request.method != "POST":
+        return JsonResponse({"ok": "Method not allowed"}, status=405)
 
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": "Invalid JSON"}, status=400)
+
+    if request.session.get("ck") != body.get("ck"):
+        return JsonResponse({"ok": "False"}, status=403)
+
+    return JsonResponse({"ok": "Legacy endpoint"}, status=200)
 
 class QueueListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -139,7 +284,6 @@ class QueueListView(APIView):
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class QueueDetailView(APIView):
     permission_classes = [IsQueueOwnerOrAdmin]
@@ -167,7 +311,6 @@ class QueueDetailView(APIView):
         queue.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
 class QueueEntryListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -186,18 +329,24 @@ class QueueEntryListView(APIView):
             try:
                 if position == 1:
                     subject = "Ти наступний до здачі завдання!"
-                    message = f"Вітаю {request.user.first_name or request.user.username}!\n\n{entry.queue.name}\n\nБудь готовим, орієнтовний час 2-3хв\n\nНомер: {position}"
-                    notification_type = 'ready'
+                    message = (
+                        f"Вітаю {request.user.first_name or request.user.username}!\n\n"
+                        f"{entry.queue.name}\n\nБудь готовим, орієнтовний час 2-3хв\n\nНомер: {position}"
+                    )
+                    notification_type = "ready"
                 else:
                     subject = "Запис у чергу успішний"
-                    message = f"Вітаю {request.user.first_name or request.user.username}!\n\nТи записався(лась) у чергу: {entry.queue.name}\n\nТвій номер у черзі: {position}\n\nОчікуй свою чергу."
-                    notification_type = 'queue_joined'
+                    message = (
+                        f"Вітаю {request.user.first_name or request.user.username}!\n\n"
+                        f"Ти записався(лась) у чергу: {entry.queue.name}\n\n"
+                        f"Твій номер у черзі: {position}\n\nОчікуй свою чергу."
+                    )
+                    notification_type = "queue_joined"
                 send_notification_email(request.user, subject, message, notification_type)
             except Exception as e:
-                print(f"Помилка відправки email при записі в чергу: {e}")
+                print(f"Email error: {e}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class QueueEntryDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -223,7 +372,6 @@ class QueueEntryDetailView(APIView):
         entry.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -232,15 +380,13 @@ class NotificationListView(APIView):
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data)
 
-
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def mark_notification_as_read(request, notification_id):
     notification = get_object_or_404(Notification, id=notification_id, user=request.user)
     notification.is_read = True
     notification.save()
-    return Response({'status': 'marked as read'}, status=status.HTTP_200_OK)
-
+    return Response({"status": "marked as read"}, status=status.HTTP_200_OK)
 
 class Register(APIView):
     permission_classes = [AllowAny]
@@ -254,28 +400,32 @@ class Register(APIView):
                 send_notification_email(
                     user,
                     "Реєстрація успішна",
-                    f"Вітаю {user.first_name or user.username}!\n\nWelcome to E-Queue!\n\nТвій аккаунт успішно створений.\n\nКористувач: {user.username}\nПошта: {user.email}",
-                    'registration'
+                    (
+                        f"Вітаю {user.first_name or user.username}!\n\n"
+                        f"Welcome to E-Queue!\n\nТвій аккаунт успішно створений.\n\n"
+                        f"Користувач: {user.username}\nПошта: {user.email}"
+                    ),
+                    "registration",
                 )
             except Exception as e:
-                print(f"Помилка відправки email при реєстрації: {e}")
+                print(f"Email error: {e}")
             return Response(
                 {"message": "Success registration", "user_id": user.id, "authenticated": True},
-                status=status.HTTP_201_CREATED
+                status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def user_profile(request):
     user = request.user
-    return Response({
-        "username": user.username,
-        "email": user.email,
-        "role": getattr(request.user, 'role', 'student')
-    })
-
+    return Response(
+        {
+            "username": user.username,
+            "email": user.email,
+            "role": getattr(request.user, "role", "student"),
+        }
+    )
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -283,23 +433,25 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.validated_data['user']
+            user = serializer.validated_data["user"]
             login(request, user)
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
-            return Response({
-                'access': str(access_token),
-                'refresh': str(refresh),
-                'username': user.username,
-                'authenticated': True
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "access": str(access_token),
+                    "refresh": str(refresh),
+                    "username": user.username,
+                    "authenticated": True,
+                },
+                status=status.HTTP_200_OK,
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 def get_last_transs():
     headers = {
         "accept": "application/json",
-        "x-token": "usqbA76ff6U0Fi6Z_QL3t2Xmh42lYCOUQ9h9v2PW51nM"
+        "x-token": "usqbA76ff6U0Fi6Z_QL3t2Xmh42lYCOUQ9h9v2PW51nM",
     }
     account_id = "WEzuUgHoGQVlmHaHagiU0w"
     start = 1759622400
@@ -315,7 +467,6 @@ def get_last_transs():
     except Exception as e:
         return str(e)
 
-
 class MonoData(APIView):
     def get(self, request, data):
         if data == "trans":
@@ -325,3 +476,12 @@ class MonoData(APIView):
             return JsonResponse({"status": "balance logic here"})
         else:
             return redirect("/")
+
+
+@login_required
+def delete_queue(request, queue_id):
+    queue = get_object_or_404(Room, id=queue_id)
+    if request.user == queue.teacher or request.user.is_superuser:
+        queue.delete()
+
+    return redirect('queues')

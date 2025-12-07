@@ -9,6 +9,11 @@ urlpatterns = [
     path('register-page/', views.register_user, name='register_page'),
     path('profile/', user_profile_page, name='user_profile_page'),
     path('queues/', views.queues, name='queues'),
+    path('create-room/', views.create_room, name='create_room'),
+    path('join-room/', views.join_room, name='join_room'),
+    path('get-room-entries/', views.get_room_entries, name='get_room_entries'),
+    path('next-student-in-room/', views.next_student_in_room, name='next_student_in_room'),
+    path('nextstudent/', views.next_student, name='next_student'),
     path('queue/', queue_page, name='queue_page'),
     path('api/queues/', views.QueueListView.as_view(), name='queue_list_api'),
     path('api/queues/<int:pk>/', views.QueueDetailView.as_view(), name='queue_detail_api'),
@@ -22,4 +27,5 @@ urlpatterns = [
     path('login/', login_page, name='login_page'),
     path('api/login/', LoginView.as_view(), name='login_api'),
     path('logout/', logout_view, name='logout'),
+    path('delete_queue/<str:queue_id>/', views.delete_queue, name='delete_queue'),
 ]

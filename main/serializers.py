@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from main.models import CustomUser, Queue, QueueEntry, Notification
+from main.models import CustomUser, Queue, QueueEntry, Notification, Room
 
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -55,6 +55,27 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Вкажіть ім'я користувача та пароль")
 
         return data
+
+class RoomSerializer(serializers.ModelSerializer):
+    entry_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Room
+        fields = ('id', 'name', 'teacher', 'is_active', 'created_at', 'entry_count')
+        read_only_fields = ('id', 'teacher', 'created_at')
+
+    def get_entry_count(self, obj):
+        return obj.entries.filter(status__in=['waiting', 'ready']).count()
+
+class QueueEntryDetailSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user.last_name', read_only=True)
+
+    class Meta:
+        model = QueueEntry
+        fields = ('id', 'username', 'first_name', 'last_name', 'position', 'status', 'created_at')
+        read_only_fields = ('id', 'created_at')
 
 class QueueSerializer(serializers.ModelSerializer):
     class Meta:
