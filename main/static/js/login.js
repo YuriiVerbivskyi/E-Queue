@@ -22,27 +22,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/login/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(formData),
+                credentials: 'include'
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                localStorage.setItem('access_token', data.access_token);
-                localStorage.setItem('refresh_token', data.refresh_token);
-
-                successMessage.textContent = 'Успішний вхід! Перенаправлення на головну...';
+                successMessage.textContent = 'Успішний вхід! Перенаправлення...';
                 successMessage.classList.remove('d-none');
 
                 setTimeout(() => {
-                    window.location.href = '/';
-                }, 1500);
+                    window.location.href = '/queues/';
+                }, 1000);
             } else {
                 let errors = '';
                 for (let key in data) {
                     errors += `${key}: ${data[key]}\n`;
                 }
-                errorMessage.textContent = errors;
+                errorMessage.textContent = errors || 'Помилка входу';
                 errorMessage.classList.remove('d-none');
             }
         } catch (err) {

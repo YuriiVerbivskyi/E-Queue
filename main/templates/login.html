@@ -8,10 +8,17 @@
         <div class="register-card">
             <h2 class="text-center">Увійти</h2>
 
+            {% if request.GET.next %}
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <strong>⚠️ Увага!</strong> Для доступу до цієї сторінки потрібно увійти в свій обліковий запис.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+
             <form id="loginForm">
 
                 <div class="mb-4">
-                    <label for="username" class="form-label">Ім'я користувача або Email</label>
+                    <label for="username" class="form-label">Ім'я користувача</label>
                     <div class="input-wrapper">
                         <i class="fas fa-user input-icon" style="color: #667eea;"></i>
                         <input type="text" class="form-control" id="username" name="username" placeholder="Введіть ім'я користувача або Email" required>
@@ -33,7 +40,7 @@
             </form>
 
             <p class="text-center mt-3 already-have">
-                Немає акаунту? <a href="/register">Зареєструватися</a>
+                Немає акаунту? <a href="/register-page/">Зареєструватися</a>
             </p>
         </div>
     </div>

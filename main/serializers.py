@@ -1,8 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from main.models import CustomUser
-from django.core.exceptions import ValidationError
+from main.models import CustomUser, Queue, QueueEntry, Notification, Room
 
 class CustomUserSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True, allow_null=True)
@@ -19,17 +18,13 @@ class CustomUserSerializer(serializers.ModelSerializer):
         }
 
     def validate_password(self, password):
-        try:
-            validate_password(password)
-        except ValidationError as error:
-            raise serializers.ValidationError(list(error.messages))
+        validate_password(password)
         return password
 
-    def validate(self, passwords):
-        if passwords['password'] != passwords['password2']:
-            raise serializers.ValidationError({"password2": "Passwords don`t match"})
-
-        return passwords
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({"password2": "Passwords don't match"})
+        return attrs
 
     def create(self, validated_data):
         validated_data.pop('password2')
@@ -41,7 +36,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
         user = CustomUser.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
-            password=validated_data['password']
+            password=validated_data['password'],
+            role=role
         )
 
         if phone_number is not None:
@@ -49,7 +45,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
             user.save()
 
         return user
-
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
@@ -72,13 +67,45 @@ class LoginSerializer(serializers.Serializer):
 
         return data
 
+class RoomSerializer(serializers.ModelSerializer):
+    entry_count = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Room
+        fields = ('id', 'name', 'teacher', 'is_active', 'created_at', 'entry_count')
+        read_only_fields = ('id', 'teacher', 'created_at')
 
+    def get_entry_count(self, obj):
+        return obj.entries.filter(status__in=['waiting', 'ready']).count()
 
+class QueueEntryDetailSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user.last_name', read_only=True)
+
+    class Meta:
+        model = QueueEntry
+        fields = ('id', 'username', 'first_name', 'last_name', 'position', 'status', 'created_at')
+        read_only_fields = ('id', 'created_at')
 
 class QueueSerializer(serializers.ModelSerializer):
-    pass
-
+    class Meta:
+        model = Queue
+        fields = '__all__'
+        read_only_fields = ('created_by', 'created_at')
+        extra_kwargs = {
+            'name': {'required': True, 'allow_blank': False},
+            'scheduled_time': {'required': True}
+        }
 
 class QueueEntrySerializer(serializers.ModelSerializer):
-    pass
+    class Meta:
+        model = QueueEntry
+        fields = '__all__'
+        read_only_fields = ('user', 'created_at')
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ('id', 'notification_type', 'subject', 'message', 'is_read', 'created_at')
+        read_only_fields = ('created_at',)

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Черги{% endblock %}
+
+{% block content %}
+<section class="register-section">
+    <div class="container-lg">
+
+        {% if status == "admin" %}
+        <div class="row">
+            <div class="col-lg-5 mb-4">
+                <div class="register-card">
+                    <h2 class="mb-4">➕ Створити чергу</h2>
+                    <form id="createRoomForm">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Назва черги</label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">📝</span>
+                                <input type="text" class="form-control" id="roomName" placeholder="Python 2 курс" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Створити</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="register-card">
+                    <h2 class="mb-4">📋 Мої черги</h2>
+                    <div id="roomsList" class="rooms-list-container">
+                        {% if rooms %}
+                            {% for room in rooms %}
+                            <div class="queue-item mb-3 p-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-1 room-name">{{ room.name }}</h5>
+                                        <small class="room-code">Код: <code class="room-id">{{ room.id }}</code></small>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary" onclick="openRoom('{{ room.id }}', '{{ room.name }}')">
+                                            Відкрити
+                                        </button>
+
+                                        <form action="{% url 'delete_queue' room.id %}" method="post" onsubmit="return confirm('Ви впевнені, що хочете видалити цю чергу?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; padding: 0;" title="Видалити">
+                                                🗑️
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="empty-message">У вас ще немає черг</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="roomModal" class="room-modal-overlay">
+            <div class="register-card room-modal-card">
+                <button class="modal-close-btn" onclick="closeRoom()">&times;</button>
+
+                <h2 id="modalRoomName" class="mb-4">Черга</h2>
+
+                <div id="queueList" class="queue-entries-container">
+                    <p class="loading-message">Завантаження...</p>
+                </div>
+
+                <button id="nextBtn" class="btn btn-primary w-100 next-student-btn" onclick="nextStudent()">✅ Наступний студент</button>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="register-card">
+                    <h2 class="mb-4">📚 Доступні rooms</h2>
+
+                    {% if available_rooms %}
+                        <div class="row">
+                            {% for room in available_rooms %}
+                            <div class="col-md-6 mb-4">
+                                <div class="queue-card p-4" onclick="joinRoom('{{ room.id }}', '{{ room.name }}')">
+                                    <h5 class="student-room-name">{{ room.name }}</h5>
+                                    <small class="student-room-code">🔐 Код: <code class="student-room-id">{{ room.id }}</code></small>
+                                    <div class="student-join-btn-wrapper">
+                                        <button class="btn btn-sm btn-primary w-100">Приєднатися</button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="no-rooms-message">Soooooon 😋</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+
+    </div>
+</section>
+
+<script src="{% static 'js/queues.js' %}" defer></script>
+{% endblock %}

@@ -285,7 +285,6 @@ main {
     }
 }
 
-
 .form-control:disabled,
 .form-control[readonly] {
     background-color: #e9ecef;
@@ -303,3 +302,295 @@ main {
 }
 
 
+.profile-card {
+    max-width: 500px !important;
+}
+
+.profile-header {
+    margin-bottom: 2rem;
+}
+
+.profile-avatar {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+}
+
+.profile-title {
+    background: linear-gradient(135deg, #667eea, #fc5c7d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    font-size: 2rem;
+    margin: 0;
+}
+
+.profile-email {
+    color: rgba(255, 255, 255, 0.9) !important;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #ee5a6f, #ff6b6b);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+    color: white;
+}
+
+.btn-danger:active {
+    transform: translateY(-1px);
+}
+
+.profile-card .form-control:disabled,
+.profile-card .form-control[readonly] {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.85);
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.85);
+    opacity: 1;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: not-allowed;
+    text-align: center;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 1rem;
+}
+
+.profile-card .form-label {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.rooms-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.queue-item {
+    border-left: 4px solid #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    animation: slideInQueue 0.3s ease;
+}
+
+@keyframes slideInQueue {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.room-name {
+    color: #667eea;
+}
+
+.room-code {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.room-id {
+    color: #fc5c7d;
+}
+
+.empty-message {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.room-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.room-modal-card {
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-close-btn {
+    float: right;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 10px;
+}
+
+.queue-entries-container {
+    min-height: 200px;
+    margin-bottom: 20px;
+}
+
+.loading-message {
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+}
+
+.no-entries-message {
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+}
+
+.error-message {
+    color: #ff6b6b;
+    text-align: center;
+}
+
+.queue-entry-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: rgba(102, 126, 234, 0.1);
+    border-left: 4px solid #667eea;
+    border-radius: 6px;
+}
+
+.entry-position {
+    color: #fc5c7d;
+    font-size: 1.3rem;
+    font-weight: 700;
+    min-width: 30px;
+    text-align: center;
+}
+
+.entry-info {
+    flex: 1;
+}
+
+.entry-name {
+    color: white;
+    font-weight: 600;
+}
+
+.entry-username {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+}
+
+.entry-status {
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.status-waiting {
+    color: #667eea;
+}
+
+.status-ready {
+    color: #fc5c7d;
+}
+
+.next-student-btn {
+    margin-top: 20px;
+}
+
+.queue-card {
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.queue-card:hover {
+    background: rgba(102, 126, 234, 0.15);
+    transform: translateY(-5px);
+    border-color: #fc5c7d;
+}
+
+.student-room-name {
+    color: #667eea;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.student-room-code {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.student-room-id {
+    color: #fc5c7d;
+    font-weight: 600;
+}
+
+.student-join-btn-wrapper {
+    margin-top: 15px;
+}
+
+.no-rooms-message {
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.student-queue-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.student-queue-modal-card {
+    max-width: 400px;
+    text-align: center;
+}
+
+.modal-success-title {
+    color: #667eea;
+}
+
+.modal-room-name {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 15px 0;
+}
+
+.modal-position-number {
+    color: #fc5c7d;
+    font-size: 4rem;
+    margin: 20px 0;
+    font-weight: 700;
+}
+
+.modal-position-label {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 20px;
+}
+
+.modal-close-button {
+    margin-top: 0;
+}
