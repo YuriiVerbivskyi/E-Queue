@@ -1,3 +1,4 @@
+from django.contrib.sites import requests
 from django.http import HttpResponse, JsonResponse
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
@@ -10,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .serializers import CustomUserSerializer, QueueSerializer, QueueEntrySerializer
 from .permissions import IsQueueOwnerOrAdmin, IsAuthenticatedOrReadOnly, IsTeacherOrAdmin
 from .models import Queue, QueueEntry
@@ -137,7 +138,8 @@ def user_profile(request):
     return Response({
         "username": user.username,
         "email": user.email,
-        "role": getattr(request.user, 'role', 'student')
+        "role": getattr(request.user, 'role', 'student'),
+        "phone_number": user.phone_number if user.phone_number else ""
     })
 
 
@@ -152,8 +154,7 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            
-            # логінимо через сесію
+
             login(request, user)  
 
             refresh = RefreshToken.for_user(user)

@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const inputUsername = document.getElementById('profile-username');
         const inputEmail = document.getElementById('profile-email');
+        const inputPhone = document.getElementById('profile-phone');
         const inputRole = document.getElementById('profile-role');
         const statusDiv = document.getElementById('profile-status');
         const logoutBtn = document.getElementById('logoutBtn');
@@ -68,6 +69,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (inputUsername) {
             inputUsername.value = data.username;
             inputEmail.value = data.email;
+            if (inputPhone) {
+                inputPhone.value = data.phone_number || 'Не вказано';
+            }
             inputRole.value = data.role || 'Користувач';
             if (statusDiv) statusDiv.style.display = 'none';
 
