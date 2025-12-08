@@ -4,15 +4,17 @@ from rest_framework import serializers
 from main.models import CustomUser, Queue, QueueEntry, Notification, Room
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True, allow_null=True)
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'password', 'password2', 'role')
+        fields = ('id', 'username', 'email', 'phone_number', 'password', 'password2')
         extra_kwargs = {
             'email': {'required': True},
-            'username': {'required': True}
+            'username': {'required': True},
+            'phone_number': {'required': False, 'allow_blank': True}
         }
 
     def validate_password(self, password):
@@ -26,13 +28,22 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password2')
-        role = validated_data.get('role', 'student')
+        phone_number = validated_data.pop('phone_number', None)
+
+        if phone_number == '':
+            phone_number = None
+
         user = CustomUser.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
             role=role
         )
+
+        if phone_number is not None:
+            user.phone_number = phone_number
+            user.save()
+
         return user
 
 class LoginSerializer(serializers.Serializer):

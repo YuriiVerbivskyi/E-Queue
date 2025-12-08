@@ -19,13 +19,8 @@ def generate_room_id():
     return ''.join(random.choices(characters, k=length))
 
 class CustomUser(AbstractUser):
-    ROLE_CHOICES = (
-        ('student', 'Student'),
-        ('teacher', 'Teacher'),
-        ('admin', 'Admin'),
-    )
-    role = models.CharField(max_length=16, choices=ROLE_CHOICES, default='student')
-    phone = models.CharField(max_length=20, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, null=True, blank=True)
+
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='customuser_groups',

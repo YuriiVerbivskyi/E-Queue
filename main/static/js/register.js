@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = {
                 username: document.getElementById('username').value,
                 email: document.getElementById('email').value,
+                phone_number: document.getElementById('phone_number').value,
                 password: document.getElementById('password').value,
                 password2: document.getElementById('password2').value
             };

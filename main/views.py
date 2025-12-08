@@ -1,8 +1,4 @@
-import json
-import os
-import uuid
-import requests
-from django.contrib.auth import get_user_model, login, logout
+from django.contrib.sites import requests
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
@@ -10,9 +6,13 @@ from dotenv import load_dotenv
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status
+from django.shortcuts import render, redirect
+from .serializers import CustomUserSerializer, QueueSerializer, QueueEntrySerializer
+from .permissions import IsQueueOwnerOrAdmin, IsAuthenticatedOrReadOnly, IsTeacherOrAdmin
+from .models import Queue, QueueEntry
+import uuid
+import json
 from twilio.rest import Client
 
 from .models import Queue, QueueEntry, Notification, CustomUser, Room
@@ -419,13 +419,17 @@ class Register(APIView):
 @permission_classes([IsAuthenticated])
 def user_profile(request):
     user = request.user
-    return Response(
-        {
-            "username": user.username,
-            "email": user.email,
-            "role": getattr(request.user, "role", "student"),
-        }
-    )
+    return Response({
+        "username": user.username,
+        "email": user.email,
+        "role": getattr(request.user, 'role', 'student'),
+        "phone_number": user.phone_number if user.phone_number else ""
+    })
+
+
+def login_page(request):
+    return render(request, 'login.html')
+
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -433,8 +437,10 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.validated_data["user"]
-            login(request, user)
+            user = serializer.validated_data['user']
+
+            login(request, user)  
+
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
             return Response(
