@@ -255,20 +255,28 @@ def next_student_in_room(request):
         "current_student": f"{current_user.first_name or current_user.username} {current_user.last_name or ''}".strip()
     }, status=200)
 
-@csrf_exempt
+@login_required(login_url="/login/")
 def next_student(request):
-    if request.method != "POST":
-        return JsonResponse({"ok": "Method not allowed"}, status=405)
 
-    try:
-        body = json.loads(request.body.decode("utf-8"))
-    except json.JSONDecodeError:
-        return JsonResponse({"ok": "Invalid JSON"}, status=400)
+    body = json.loads(request.body)
 
-    if request.session.get("ck") != body.get("ck"):
-        return JsonResponse({"ok": "False"}, status=403)
-
-    return JsonResponse({"ok": "Legacy endpoint"}, status=200)
+    if request.session.get("ck") == body.get("ck"):
+        if not all_students:
+            return JsonResponse({'ok': "No more students"}, status=400)
+        current = all_students.pop()
+        print(current)
+        account_sid = ''
+        auth_token = ''
+        client = Client(account_sid, auth_token)
+        message = client.messages.create(
+          messaging_service_sid='MG4d6d820583ad25d5869d436712ffa6ee',
+          body='u are next',
+          to='+380986229185'
+        )
+        print(message.sid)
+        return JsonResponse({'ok': current}, status=200)
+    else:
+        return JsonResponse({'ok': "False"}, status=400)
 
 class QueueListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
