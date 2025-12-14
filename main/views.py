@@ -1,4 +1,9 @@
-from django.contrib.sites import requests
+import json
+import os
+import uuid
+import requests
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
@@ -6,17 +11,22 @@ from dotenv import load_dotenv
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework import status
-from django.shortcuts import render, redirect
-from .serializers import CustomUserSerializer, QueueSerializer, QueueEntrySerializer
-from .permissions import IsQueueOwnerOrAdmin, IsAuthenticatedOrReadOnly, IsTeacherOrAdmin
-from .models import Queue, QueueEntry
-import uuid
-import json
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 from twilio.rest import Client
-
-from .models import Queue, QueueEntry, Notification, CustomUser, Room
-from .permissions import IsQueueOwnerOrAdmin, IsAuthenticatedOrReadOnly
+from .models import (
+    Queue,
+    QueueEntry,
+    Notification,
+    CustomUser,
+    Room,
+)
+from .permissions import (
+    IsQueueOwnerOrAdmin,
+    IsAuthenticatedOrReadOnly,
+    IsTeacherOrAdmin,
+)
 from .serializers import (
     CustomUserSerializer,
     LoginSerializer,
@@ -27,29 +37,35 @@ from .serializers import (
     QueueEntryDetailSerializer,
 )
 from .utils import send_notification_email
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from .models import Room
 
 load_dotenv()
+
+all_students = []
+
 
 def logout_view(request):
     logout(request)
     return redirect("/")
 
+
 def login_page(request):
     return render(request, "login.html")
+
 
 def register_user(request):
     return render(request, "register.html")
 
+
 def home(request):
     return render(request, "index.html")
+
 
 @login_required(login_url="/login/")
 def user_profile_page(request):
     user = request.user
     email = user.email if user.email else "Не вказано"
+    phone = getattr(user, 'phone_number', '')
+
     return render(
         request,
         "profile.html",
@@ -57,8 +73,10 @@ def user_profile_page(request):
             "profile_username": user.username,
             "profile_email": email,
             "profile_role": getattr(user, "role", "student"),
+            "profile_phone": phone,
         },
     )
+
 
 def queue_page(request):
     user = request.user
@@ -75,6 +93,7 @@ def queue_page(request):
         status_type = "student"
         context = {"status": status_type}
     return render(request, "queue.html", context)
+
 
 @login_required(login_url="/login/")
 def queues(request):
@@ -94,6 +113,7 @@ def queues(request):
         context["available_rooms"] = Room.objects.filter(is_active=True)
 
     return render(request, "queues.html", context)
+
 
 @csrf_exempt
 @login_required(login_url="/login/")
@@ -120,6 +140,7 @@ def create_room(request):
         }, status=201)
     except Exception as e:
         return JsonResponse({"ok": False, "message": str(e)}, status=500)
+
 
 @csrf_exempt
 @login_required(login_url="/login/")
@@ -169,6 +190,7 @@ def join_room(request):
     except Exception as e:
         return JsonResponse({"ok": False, "message": str(e)}, status=500)
 
+
 @csrf_exempt
 @login_required(login_url="/login/")
 def get_room_entries(request):
@@ -192,6 +214,7 @@ def get_room_entries(request):
     serializer = QueueEntryDetailSerializer(entries, many=True)
 
     return JsonResponse(serializer.data, safe=False)
+
 
 @csrf_exempt
 @login_required(login_url="/login/")
@@ -225,18 +248,18 @@ def next_student_in_room(request):
         return JsonResponse({"ok": False, "message": "No more students"}, status=400)
 
     current_user = next_entry.user
-    phone = current_user.phone or "+380961094823"
+    phone = getattr(current_user, 'phone_number', "+380961094823")
 
     try:
-        load_dotenv()
         account_sid = os.getenv("TWILIO_ACCOUNT_SID")
         auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+        twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
 
-        if account_sid and auth_token:
+        if account_sid and auth_token and twilio_number:
             client = Client(account_sid, auth_token)
             client.messages.create(
-                messaging_service_sid="MG4d6d820583ad25d5869d436712ffa6ee",
                 body=f"E-Queue: {room.name} - Ти наступний!",
+                from_=twilio_number,
                 to=phone,
             )
     except Exception as e:
@@ -255,28 +278,36 @@ def next_student_in_room(request):
         "current_student": f"{current_user.first_name or current_user.username} {current_user.last_name or ''}".strip()
     }, status=200)
 
+
 @login_required(login_url="/login/")
 def next_student(request):
-
     body = json.loads(request.body)
 
     if request.session.get("ck") == body.get("ck"):
         if not all_students:
             return JsonResponse({'ok': "No more students"}, status=400)
         current = all_students.pop()
-        print(current)
-        account_sid = ''
-        auth_token = ''
-        client = Client(account_sid, auth_token)
-        message = client.messages.create(
-          messaging_service_sid='MG4d6d820583ad25d5869d436712ffa6ee',
-          body='u are next',
-          to='+380986229185'
-        )
-        print(message.sid)
+
+        try:
+            account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+            auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+            twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
+
+            if account_sid and auth_token and twilio_number:
+                client = Client(account_sid, auth_token)
+                message = client.messages.create(
+                    body='u are next',
+                    from_=twilio_number,
+                    to='+380961094823'
+                )
+                print(message.sid)
+        except Exception as e:
+            print(f"Twilio Error: {e}")
+
         return JsonResponse({'ok': current}, status=200)
     else:
         return JsonResponse({'ok': "False"}, status=400)
+
 
 class QueueListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -292,6 +323,7 @@ class QueueListView(APIView):
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class QueueDetailView(APIView):
     permission_classes = [IsQueueOwnerOrAdmin]
@@ -318,6 +350,7 @@ class QueueDetailView(APIView):
         self.check_object_permissions(request, queue)
         queue.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class QueueEntryListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -356,6 +389,7 @@ class QueueEntryListView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class QueueEntryDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -380,6 +414,7 @@ class QueueEntryDetailView(APIView):
         entry.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -388,6 +423,7 @@ class NotificationListView(APIView):
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data)
 
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def mark_notification_as_read(request, notification_id):
@@ -395,6 +431,7 @@ def mark_notification_as_read(request, notification_id):
     notification.is_read = True
     notification.save()
     return Response({"status": "marked as read"}, status=status.HTTP_200_OK)
+
 
 class Register(APIView):
     permission_classes = [AllowAny]
@@ -423,6 +460,7 @@ class Register(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def user_profile(request):
@@ -431,12 +469,12 @@ def user_profile(request):
         "username": user.username,
         "email": user.email,
         "role": getattr(request.user, 'role', 'student'),
-        "phone_number": user.phone_number if user.phone_number else ""
+        "phone": getattr(user, "phone_number", "")
     })
 
 
 def login_page(request):
-    return render(request, 'login.html')
+    return render(request, "login.html")
 
 
 class LoginView(APIView):
@@ -447,7 +485,7 @@ class LoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data['user']
 
-            login(request, user)  
+            login(request, user)
 
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
@@ -461,6 +499,7 @@ class LoginView(APIView):
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 def get_last_transs():
     headers = {
@@ -480,6 +519,7 @@ def get_last_transs():
         return last_transs
     except Exception as e:
         return str(e)
+
 
 class MonoData(APIView):
     def get(self, request, data):

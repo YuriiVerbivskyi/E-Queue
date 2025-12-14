@@ -36,8 +36,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         user = CustomUser.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
-            password=validated_data['password'],
-            role=role
+            password=validated_data['password']
         )
 
         if phone_number is not None:
