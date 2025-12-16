@@ -594,3 +594,40 @@ main {
 .modal-close-button {
     margin-top: 0;
 }
+
+.register-card input,
+.register-card textarea,
+.register-card .form-control {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+
+.register-card input:focus,
+.register-card .form-control:focus {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.25);
+}
+
+.register-card input::placeholder,
+.register-card .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.5) !important;
+    opacity: 1;
+}
+
+.register-card input:-webkit-autofill,
+.register-card input:-webkit-autofill:hover,
+.register-card input:-webkit-autofill:focus,
+.register-card input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #22223a inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    color: #ffffff !important;
+    transition: background-color 5000s ease-in-out 0s;
+}

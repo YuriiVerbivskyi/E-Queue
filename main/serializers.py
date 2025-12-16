@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from main.models import CustomUser, Queue, QueueEntry, Notification, Room
+from main.models import CustomUser, QueueEntry, Notification, Room
 
 class CustomUserSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True, allow_null=True)
@@ -71,7 +71,7 @@ class RoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ('id', 'name', 'teacher', 'is_active', 'created_at', 'entry_count')
+        fields = ('id', 'name', 'description', 'event_date', 'teacher', 'is_active', 'created_at', 'entry_count')
         read_only_fields = ('id', 'teacher', 'created_at')
 
     def get_entry_count(self, obj):
@@ -86,16 +86,6 @@ class QueueEntryDetailSerializer(serializers.ModelSerializer):
         model = QueueEntry
         fields = ('id', 'username', 'first_name', 'last_name', 'position', 'status', 'created_at')
         read_only_fields = ('id', 'created_at')
-
-class QueueSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Queue
-        fields = '__all__'
-        read_only_fields = ('created_by', 'created_at')
-        extra_kwargs = {
-            'name': {'required': True, 'allow_blank': False},
-            'scheduled_time': {'required': True}
-        }
 
 class QueueEntrySerializer(serializers.ModelSerializer):
     class Meta:

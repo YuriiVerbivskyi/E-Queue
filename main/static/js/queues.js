@@ -4,10 +4,15 @@ let queueRefreshInterval = null;
 document.getElementById('createRoomForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const nameInput = document.getElementById('roomName');
+    const descInput = document.getElementById('roomDesc');
+    const dateInput = document.getElementById('roomDate');
+
     const name = nameInput.value.trim();
+    const description = descInput ? descInput.value.trim() : '';
+    const event_date = dateInput ? dateInput.value : '';
 
     if (!name) {
-        alert('Введіть назву черги');
+        alert('Please enter event name');
         return;
     }
 
@@ -18,7 +23,7 @@ document.getElementById('createRoomForm')?.addEventListener('submit', async (e) 
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
-            body: JSON.stringify({ name })
+            body: JSON.stringify({ name, description, event_date })
         });
 
         const data = await res.json();
@@ -26,10 +31,10 @@ document.getElementById('createRoomForm')?.addEventListener('submit', async (e) 
             nameInput.value = '';
             location.reload();
         } else {
-            alert('Помилка: ' + (data.message || 'Невідома помилка'));
+            alert('Error: ' + (data.message || 'Unknown error'));
         }
     } catch (err) {
-        alert('Помилка мережі: ' + err);
+        alert('Network error: ' + err);
     }
 });
 
@@ -75,14 +80,14 @@ async function loadQueueList(roomId) {
         const entries = await res.json();
 
         if (!Array.isArray(entries) || entries.length === 0) {
-            container.innerHTML = '<p class="no-entries-message">Студентів немає</p>';
+            container.innerHTML = '<p class="no-entries-message">Queue is empty</p>';
             return;
         }
 
         const html = entries.map((e, idx) => {
             const fullName = `${e.first_name || e.username} ${e.last_name || ''}`.trim();
             const username = e.username || '';
-            const statusText = e.status === 'ready' ? '🔴 Ready' : '⏳ Waiting';
+            const statusText = e.status === 'ready' ? '🟢 Ready!' : '⏳ Waiting';
             const statusClass = e.status === 'ready' ? 'status-ready' : 'status-waiting';
 
             return `
@@ -100,7 +105,7 @@ async function loadQueueList(roomId) {
         container.innerHTML = html;
     } catch (err) {
         console.error('Error loading queue:', err);
-        container.innerHTML = '<p class="error-message">Помилка завантаження</p>';
+        container.innerHTML = '<p class="error-message">Error loading data</p>';
     }
 }
 
@@ -119,13 +124,13 @@ async function nextStudent() {
 
         const data = await res.json();
         if (data.ok) {
-            alert(`✅ ${data.current_student} - наступний!`);
+            alert(`✅ ${data.current_student} - is next!`);
             loadQueueList(currentRoomId);
         } else {
-            alert('❌ ' + (data.message || 'Невідома помилка'));
+            alert('❌ ' + (data.message || 'Unknown error'));
         }
     } catch (err) {
-        alert('Помилка: ' + err);
+        alert('Error: ' + err);
     }
 }
 
@@ -144,10 +149,10 @@ async function joinRoom(roomId, roomName) {
         if (data.ok) {
             showStudentQueue(roomName, data.position);
         } else {
-            alert('❌ ' + (data.message || 'Невідома помилка'));
+            alert('❌ ' + (data.message || 'Unknown error'));
         }
     } catch (err) {
-        alert('Помилка: ' + err);
+        alert('Error: ' + err);
     }
 }
 
@@ -160,11 +165,11 @@ function showStudentQueue(roomName, position) {
     modal.className = 'student-queue-modal-overlay';
     modal.innerHTML = `
         <div class="register-card student-queue-modal-card">
-            <h2 class="modal-success-title">✅ Успішно!</h2>
+            <h2 class="modal-success-title">✅ Success!</h2>
             <p class="modal-room-name">${roomName}</p>
             <h1 class="modal-position-number">${position}</h1>
-            <p class="modal-position-label">Ваш номер у черзі</p>
-            <button class="btn btn-primary w-100 modal-close-button" onclick="document.getElementById('studentQueueModal')?.remove()">Закрити</button>
+            <p class="modal-position-label">Your Position</p>
+            <button class="btn btn-primary w-100 modal-close-button" onclick="document.getElementById('studentQueueModal')?.remove()">Got it</button>
         </div>
     `;
     document.body.appendChild(modal);

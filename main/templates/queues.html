@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Черги{% endblock %}
+{% block title %}Events{% endblock %}
 
 {% block content %}
 <section class="register-section">
@@ -11,23 +11,39 @@
         <div class="row">
             <div class="col-lg-5 mb-4">
                 <div class="register-card">
-                    <h2 class="mb-4">➕ Створити чергу</h2>
+                    <h2 class="mb-4">🎉 Create Event</h2>
                     <form id="createRoomForm">
                         <div class="form-group mb-3">
-                            <label class="form-label">Назва черги</label>
+                            <label class="form-label">Event Name</label>
                             <div class="input-wrapper">
                                 <span class="input-icon">📝</span>
-                                <input type="text" class="form-control" id="roomName" placeholder="Python 2 курс" required>
+                                <input type="text" class="form-control" id="roomName">
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Створити</button>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label">Description</label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">ℹ️</span>
+                                <textarea class="form-control" id="roomDesc"  rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label">Date & Time</label>
+                            <div class="input-wrapper">
+                                <input type="datetime-local" class="form-control" id="roomDate" max="9999-12-31T23:59" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Create</button>
                     </form>
                 </div>
             </div>
 
             <div class="col-lg-7">
                 <div class="register-card">
-                    <h2 class="mb-4">📋 Мої черги</h2>
+                    <h2 class="mb-4">📋 Events</h2>
                     <div id="roomsList" class="rooms-list-container">
                         {% if rooms %}
                             {% for room in rooms %}
@@ -35,17 +51,24 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h5 class="mb-1 room-name">{{ room.name }}</h5>
-                                        <small class="room-code">Код: <code class="room-id">{{ room.id }}</code></small>
+                                        <div class="text-white-50 small mb-1">
+                                            {% if room.event_date %}
+                                                📅 {{ room.event_date|date:"d.m.Y H:i" }}
+                                            {% else %}
+                                                📅 Date TBD
+                                            {% endif %}
+                                        </div>
+                                        <small class="room-code">Code: <code class="room-id">{{ room.id }}</code></small>
                                     </div>
 
                                     <div class="d-flex gap-2">
                                         <button class="btn btn-primary" onclick="openRoom('{{ room.id }}', '{{ room.name }}')">
-                                            Відкрити
+                                            Manage
                                         </button>
 
-                                        <form action="{% url 'delete_queue' room.id %}" method="post" onsubmit="return confirm('Ви впевнені, що хочете видалити цю чергу?');">
+                                        <form action="{% url 'delete_queue' room.id %}" method="post" onsubmit="return confirm('Delete this event?');">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-danger d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; padding: 0;" title="Видалити">
+                                            <button type="submit" class="btn btn-danger d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; padding: 0;">
                                                 🗑️
                                             </button>
                                         </form>
@@ -55,7 +78,7 @@
                             </div>
                             {% endfor %}
                         {% else %}
-                            <p class="empty-message">У вас ще немає черг</p>
+                            <p class="empty-message">No events created yet.</p>
                         {% endif %}
                     </div>
                 </div>
@@ -65,14 +88,11 @@
         <div id="roomModal" class="room-modal-overlay">
             <div class="register-card room-modal-card">
                 <button class="modal-close-btn" onclick="closeRoom()">&times;</button>
-
-                <h2 id="modalRoomName" class="mb-4">Черга</h2>
-
+                <h2 id="modalRoomName" class="mb-4">Event</h2>
                 <div id="queueList" class="queue-entries-container">
-                    <p class="loading-message">Завантаження...</p>
+                    <p class="loading-message">Loading...</p>
                 </div>
-
-                <button id="nextBtn" class="btn btn-primary w-100 next-student-btn" onclick="nextStudent()">✅ Наступний студент</button>
+                <button id="nextBtn" class="btn btn-primary w-100 next-student-btn" onclick="nextStudent()">✅ Call Next</button>
             </div>
         </div>
 
@@ -80,24 +100,39 @@
         <div class="row">
             <div class="col-lg-10 mx-auto">
                 <div class="register-card">
-                    <h2 class="mb-4">📚 Доступні rooms</h2>
+                    <h2 class="mb-4">🔥 Events</h2>
 
                     {% if available_rooms %}
                         <div class="row">
                             {% for room in available_rooms %}
                             <div class="col-md-6 mb-4">
-                                <div class="queue-card p-4" onclick="joinRoom('{{ room.id }}', '{{ room.name }}')">
-                                    <h5 class="student-room-name">{{ room.name }}</h5>
-                                    <small class="student-room-code">🔐 Код: <code class="student-room-id">{{ room.id }}</code></small>
-                                    <div class="student-join-btn-wrapper">
-                                        <button class="btn btn-sm btn-primary w-100">Приєднатися</button>
+                                <div class="queue-card p-4 h-100 d-flex flex-column" onclick="joinRoom('{{ room.id }}', '{{ room.name }}')">
+                                    <div class="mb-3">
+                                        <h5 class="student-room-name mb-1">{{ room.name }}</h5>
+                                        <div class="text-white-50 mb-2">
+                                            {% if room.event_date %}
+                                                📅 {{ room.event_date|date:"d.m.Y H:i" }}
+                                            {% else %}
+                                                📅 Date TBD
+                                            {% endif %}
+                                        </div>
+                                        {% if room.description %}
+                                            <p class="small text-white-50">{{ room.description|truncatechars:60 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mt-auto">
+                                        <small class="student-room-code d-block mb-2">Code: <code class="student-room-id">{{ room.id }}</code></small>
+                                        <button class="btn btn-sm btn-primary w-100">Join</button>
                                     </div>
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="no-rooms-message">Soooooon 😋</p>
+                        <div class="text-center py-5">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">😴</div>
+                            <p class="no-rooms-message">No active events at the moment.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>

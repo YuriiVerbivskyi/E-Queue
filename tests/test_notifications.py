@@ -32,9 +32,6 @@ class TestNotificationListView:
 class TestMarkNotificationAsRead:
 
     def test_mark_as_read_authenticated(self, authenticated_client, notification, student_user):
-        notification.user = student_user
-        notification.save()
-
         response = authenticated_client.post(
             reverse('mark_read', kwargs={'notification_id': notification.id})
         )

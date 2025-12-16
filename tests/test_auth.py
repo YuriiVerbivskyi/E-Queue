@@ -1,48 +1,57 @@
 import pytest
+from django.contrib.auth import get_user_model
+from django.urls import reverse
 from rest_framework import status
 
+User = get_user_model()
+pytestmark = pytest.mark.django_db
+
 class TestAuthenticatedAccess:
-    def test_user_profile_authenticated(self, authenticated_client):
-        response = authenticated_client.get('/profile/')
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_302_FOUND]
+    def test_access_protected_endpoint_without_token(self, api_client):
+        response = api_client.get(reverse('queue_entries'))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_user_profile_unauthenticated(self, api_client):
-        response = api_client.get('/profile/')
-        assert response.status_code in [status.HTTP_302_FOUND, status.HTTP_403_FORBIDDEN]
+    def test_access_protected_endpoint_with_invalid_token(self, api_client):
+        api_client.credentials(HTTP_AUTHORIZATION='Bearer invalid_token')
+        response = api_client.get(reverse('queue_entries'))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_access_protected_endpoint_with_valid_token(self, authenticated_client):
+        response = authenticated_client.get(reverse('queue_entries'))
+        assert response.status_code == status.HTTP_200_OK
+
+@pytest.mark.django_db
 class TestUserRegistration:
     def test_register_user(self, api_client):
         data = {
             'username': 'newuser',
-            'email': 'newuser@test.com',
-            'password': 'testpass123'
+            'email': 'new@test.com',
+            'password': 'securepass123',
+            'password2': 'securepass123'
         }
-        response = api_client.post('/register-page/', data)
-        assert response.status_code in [200, 302, 201]
+        response = api_client.post(reverse('register_api'), data)
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_register_duplicate_username(self, api_client, student_user):
+        data = {
+            'username': 'student',
+            'email': 'another@test.com',
+            'password': 'securepass123',
+            'password2': 'securepass123'
+        }
+        response = api_client.post(reverse('register_api'), data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_login_page(self, api_client):
-        response = api_client.get('/login/')
+        response = api_client.get(reverse('login_page'))
         assert response.status_code == status.HTTP_200_OK
 
-    def test_register_duplicate_username(self, db, api_client):
-        api_client.post('/register-page/', {
-            'username': 'duplicate',
-            'email': 'test1@test.com',
-            'password': 'pass123'
-        })
-        response = api_client.post('/register-page/', {
-            'username': 'duplicate',
-            'email': 'test2@test.com',
-            'password': 'pass123'
-        })
-        assert response.status_code in [200, 400, 409, 302]
-
-
+@pytest.mark.django_db
 class TestLogout:
     def test_logout_authenticated(self, authenticated_client):
-        response = authenticated_client.post('/logout/')
-        assert response.status_code in [status.HTTP_302_FOUND, status.HTTP_200_OK]
+        response = authenticated_client.post(reverse('logout'))
+        assert response.status_code == status.HTTP_302_FOUND
 
     def test_logout_unauthenticated(self, api_client):
-        response = api_client.post('/logout/')
-        assert response.status_code in [status.HTTP_302_FOUND, status.HTTP_403_FORBIDDEN]
+        response = api_client.post(reverse('logout'))
+        assert response.status_code == status.HTTP_302_FOUND

@@ -1,41 +1,46 @@
 {% extends 'base.html' %}
-{% block title %}E-Queue - Головна{% endblock %}
+{% block title %}E-Queue - Події та Черги{% endblock %}
 {% block content %}
 
 <section class="hero" role="region" aria-label="Вітальний розділ">
     <div class="container-lg">
-        <h1 class="display-3 fw-bold mb-3">E-Queue</h1>
-        <p class="lead fs-5 mb-0">Система для розподілу черг на парах</p>
-        <a href="/queues" class="btn btn-primary btn-lg mt-4" aria-label="Розпочати роботу">Розпочати роботу</a>
+        <h1 class="display-4 fw-bold mb-3">Електронна черга замість живого натовпу.</h1>
+        <p class="lead fs-5 mb-0" style="max-width: 750px; margin: 0 auto; opacity: 0.9;">
+            Більше ніяких "хто останній". Університет, концерт чи держустанова — бронюй місце в смартфоні, отримуй сповіщення і заходь без зайвого очікування.
+        </p>
+
+        <a href="/queues" class="btn btn-primary btn-lg mt-4" aria-label="Знайти чергу">Знайти чергу</a>
     </div>
 </section>
 
-
-
 <section class="features py-5">
     <div class="container-lg">
-        <div class="row g-5">
+        <div class="row g-4 justify-content-center">
+
             <div class="col-lg-4 col-md-6">
-                <div class="feature-card" role="article">
-                    <div class="feature-icon" aria-hidden="true">📋</div>
-                    <h3 class="h4">Керування чергами</h3>
-                    <p>Створюйте й організовуйте черги в кілька кліків. Встановлюйте максимальну кількість місць та керуйте статусом у реальному часі.</p>
+                <div class="feature-card h-100" role="article">
+                    <div class="feature-icon" aria-hidden="true">🎓</div>
+                    <h3 class="h4">Навчальні заклади</h3>
+                    <p>Здавай лабораторні, проєктні роботи та заліки без хаосу. Викладач бачить список, а ти спокійно готуєшся до здачі.</p>
                 </div>
             </div>
+
             <div class="col-lg-4 col-md-6">
-                <div class="feature-card" role="article">
-                    <div class="feature-icon" aria-hidden="true">👥</div>
-                    <h3 class="h4">Зручно для студентів</h3>
-                    <p>Студенти можуть легко вступити в чергу та отримати свій номер. Завжди знають свою позицію та час очікування.</p>
+                <div class="feature-card h-100" role="article">
+                    <div class="feature-icon" aria-hidden="true">🎤</div>
+                    <h3 class="h4">Концерти та фан-зустрічі</h3>
+                    <p>Хочеш автограф та фото із зіркою? Не штовхайся в натовпі. Ми надішлемо сповіщення, коли настане саме твій момент підійти.</p>
                 </div>
             </div>
+
             <div class="col-lg-4 col-md-6">
-                <div class="feature-card" role="article">
-                    <div class="feature-icon" aria-hidden="true">⚡</div>
-                    <h3 class="h4">Статистика в реальному часі</h3>
-                    <p>Спостерігайте за статусом черг, кількістю осіб, які чекають, та аналізуйте дані для покращення процесів.</p>
+                <div class="feature-card h-100" role="article">
+                    <div class="feature-icon" aria-hidden="true">🏛️</div>
+                    <h3 class="h4">Громадські місця</h3>
+                    <p>Оформлення документів чи візит до лікаря не мають забирати пів дня. Записуйся онлайн і приходь на свій час без зайвих нервів.</p>
                 </div>
             </div>
+
         </div>
     </div>
 </section>
