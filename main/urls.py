@@ -28,4 +28,9 @@ urlpatterns = [
     path('api/login/', LoginView.as_view(), name='login_api'),
     path('logout/', logout_view, name='logout'),
     path('delete_queue/<str:queue_id>/', views.delete_queue, name='delete_queue'),
+    path('calendar/', views.calendar_page, name='calendar'),
+    path('api/calendar/events/', views.get_google_events, name='get_google_events'),
+    path('api/calendar/add/', views.add_google_event, name='add_google_event'),
+    path('google-auth/', views.google_auth_start, name='google_auth'),
+    path('oauth2callback/', views.oauth2callback, name='oauth2callback'),
 ]

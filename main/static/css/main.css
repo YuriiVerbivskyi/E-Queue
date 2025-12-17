@@ -631,3 +631,148 @@ main {
     color: #ffffff !important;
     transition: background-color 5000s ease-in-out 0s;
 }
+
+.calendar-section {
+    padding-top: 100px;
+    padding-bottom: 50px;
+    min-height: 100vh;
+    background-color: #1a1b26;
+}
+
+.calendar-wrapper {
+    background: #1f2029;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    border: 1px solid #2f303d;
+}
+
+:root {
+    --fc-border-color: #444;
+    --fc-page-bg-color: #1f2029;
+    --fc-neutral-bg-color: #2a2b36;
+    --fc-list-event-hover-bg-color: #333;
+    --fc-today-bg-color: rgba(102, 126, 234, 0.1);
+}
+
+#calendar {
+    font-family: 'Inter', sans-serif;
+    color: #ffffff;
+    min-height: 700px;
+}
+
+.fc-col-header-cell-cushion {
+    color: #a0aaec;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    padding: 10px 0;
+    text-decoration: none;
+}
+
+.fc-daygrid-day-number {
+    color: #ffffff;
+    font-weight: 500;
+    padding: 8px;
+    text-decoration: none;
+}
+
+.fc-button-primary {
+    background-color: #2f303d !important;
+    border-color: #444 !important;
+    color: white !important;
+    text-transform: capitalize;
+}
+
+.fc-button-primary:hover {
+    background-color: #667eea !important;
+    border-color: #667eea !important;
+}
+
+.fc-button-active {
+    background-color: #667eea !important;
+    border-color: #667eea !important;
+}
+
+.fc-toolbar-title {
+    color: white;
+    font-size: 1.75rem !important;
+}
+
+.fc-event {
+    border: none;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin-bottom: 2px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.custom-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: #2b2c3d;
+    color: white;
+    margin: 10% auto;
+    padding: 30px;
+    border: 1px solid #555;
+    width: 90%;
+    max-width: 450px;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.close-btn {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #aaa;
+    transition: 0.2s;
+}
+
+.close-btn:hover { color: white; }
+
+.form-control {
+    background-color: #1a1b26;
+    border: 1px solid #444;
+    color: white;
+    padding: 10px;
+}
+
+.form-control:focus {
+    background-color: #1a1b26;
+    color: white;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+}
+
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    pointer-events: none;
+}
+
+.register-card .form-control {
+    padding-left: 50px !important;
+    height: 50px;
+}

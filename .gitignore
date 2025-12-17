@@ -28,3 +28,4 @@ pytest_cache/
 dist/
 build/
 .tox/
+client_secret.json

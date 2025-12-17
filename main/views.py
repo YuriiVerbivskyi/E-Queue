@@ -3,21 +3,20 @@ import os
 import uuid
 import datetime
 import requests
-from django.contrib.auth import login, logout, get_user_model
+from decouple import config
+from dotenv import load_dotenv
+from twilio.rest import Client
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
-from django.urls import reverse
-from dotenv import load_dotenv
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from twilio.rest import Client
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -26,13 +25,11 @@ from googleapiclient.discovery import build
 from .models import (
     QueueEntry,
     Notification,
-    CustomUser,
     Room,
 )
 from .permissions import (
     IsQueueOwnerOrAdmin,
     IsAuthenticatedOrReadOnly,
-    IsTeacherOrAdmin,
 )
 from .serializers import (
     CustomUserSerializer,
@@ -42,7 +39,6 @@ from .serializers import (
     RoomSerializer,
     QueueEntryDetailSerializer,
 )
-from .utils import send_notification_email
 
 load_dotenv()
 
@@ -50,7 +46,8 @@ CLIENT_SECRETS_FILE = "client_secret.json"
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 REDIRECT_URI = 'http://127.0.0.1:8000/oauth2callback/'
 
-all_students = []
+GOOGLE_API_KEY = config('GOOGLE_API_KEY')
+GOOGLE_CALENDAR_ID = config('GOOGLE_CALENDAR_ID')
 
 
 def get_user_role_name(user):
@@ -83,11 +80,7 @@ def home(request):
 def user_profile_page(request):
     user = request.user
     email = user.email if user.email else "Not specified"
-
-    phone = user.phone_number
-    if not phone:
-        phone = "Not specified"
-
+    phone = user.phone_number if user.phone_number else "Not specified"
     role_name = get_user_role_name(user)
 
     return render(
@@ -193,6 +186,10 @@ def oauth2callback(request):
         room_id = request.session.get('calendar_room_id')
         if room_id:
             return add_event_to_calendar(request, room_id)
+
+        if request.session.get('is_calendar_auth'):
+            del request.session['is_calendar_auth']
+            return redirect('calendar')
 
         return redirect('queues')
     except Exception as e:
@@ -579,18 +576,113 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class MonoData(APIView):
-    def get(self, request, data):
-        if data == "trans":
-            last_trns = get_last_transs()
-            return JsonResponse(last_trns, safe=False)
-        else:
-            return redirect("/")
-
-
 @login_required
 def delete_queue(request, queue_id):
     queue = get_object_or_404(Room, id=queue_id)
     if request.user == queue.teacher or request.user.is_superuser:
         queue.delete()
     return redirect('queues')
+
+
+@login_required(login_url="/login/")
+def calendar_page(request):
+    is_admin = request.user.is_staff or request.user.is_superuser
+    return render(request, 'calendar.html', {'is_admin': is_admin})
+
+
+def get_google_events(request):
+    url = f'https://www.googleapis.com/calendar/v3/calendars/{GOOGLE_CALENDAR_ID}/events'
+    time_min = (datetime.datetime.utcnow() - datetime.timedelta(days=60)).isoformat() + 'Z'
+
+    params = {
+        'key': GOOGLE_API_KEY,
+        'singleEvents': True,
+        'orderBy': 'startTime',
+        'timeMin': time_min,
+        'maxResults': 100
+    }
+
+    events_data = []
+    try:
+        response = requests.get(url, params=params)
+        data = response.json()
+
+        if 'items' in data:
+            for item in data['items']:
+                start = item.get('start', {})
+                end = item.get('end', {})
+                start_dt = start.get('dateTime') or start.get('date')
+                end_dt = end.get('dateTime') or end.get('date')
+
+                events_data.append({
+                    'title': item.get('summary', 'Подія'),
+                    'start': start_dt,
+                    'end': end_dt,
+                    'url': item.get('htmlLink'),
+                    'description': item.get('description', ''),
+                    'backgroundColor': '#667eea',
+                    'borderColor': '#667eea'
+                })
+    except Exception:
+        pass
+
+    return JsonResponse(events_data, safe=False)
+
+
+@csrf_exempt
+@login_required
+def add_google_event(request):
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "message": "Method not allowed"}, status=405)
+
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"ok": False, "message": "Forbidden"}, status=403)
+
+    creds_data = request.session.get('google_credentials')
+    if not creds_data:
+        return JsonResponse({"ok": False, "redirect": "/google-auth/"})
+
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+        title = body.get("title")
+        start_str = body.get("start")
+
+        start_dt = datetime.datetime.fromisoformat(start_str)
+        end_dt = start_dt + datetime.timedelta(hours=1)
+
+        creds = Credentials(**creds_data)
+        service = build('calendar', 'v3', credentials=creds)
+
+        event = {
+            'summary': title,
+            'start': {
+                'dateTime': start_dt.isoformat(),
+                'timeZone': 'Europe/Kyiv',
+            },
+            'end': {
+                'dateTime': end_dt.isoformat(),
+                'timeZone': 'Europe/Kyiv',
+            },
+        }
+
+        service.events().insert(calendarId=GOOGLE_CALENDAR_ID, body=event).execute()
+        return JsonResponse({"ok": True})
+
+    except Exception as e:
+        return JsonResponse({"ok": False, "message": str(e)}, status=500)
+
+
+def google_auth_start(request):
+    request.session['is_calendar_auth'] = True
+
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI
+    )
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true'
+    )
+    request.session['state'] = state
+    return redirect(authorization_url)

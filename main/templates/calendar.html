@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Calendar{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
+<section class="calendar-section">
+    <div class="container-lg">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2 text-white fw-bold mb-0">📅 Розклад</h1>
+            {% if is_admin %}
+            <button id="openModalBtn" class="btn btn-primary">
+                + Додати подію
+            </button>
+            {% endif %}
+        </div>
+
+        <div class="calendar-wrapper">
+            <div id='calendar'></div>
+        </div>
+
+    </div>
+</section>
+
+<div id="eventModal" class="custom-modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3 class="mb-4">Нова подія</h3>
+        <form id="addEventForm">
+            <div class="mb-3">
+                <label class="form-label">Назва події</label>
+                <input type="text" id="eventTitle" class="form-control" placeholder="Наприклад: Екзамен" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Дата та час</label>
+                <input type="datetime-local" id="eventStart" class="form-control" required max="9999-12-31T23:59">
+            </div>
+            <button type="submit" class="btn btn-success w-100">Зберегти</button>
+        </form>
+    </div>
+</div>
+
+<script src="{% static 'js/calendar.js' %}"></script>
+{% endblock %}
