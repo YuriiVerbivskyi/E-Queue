@@ -21,6 +21,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+from datetime import timezone
 
 from .models import (
     QueueEntry,
@@ -592,7 +593,7 @@ def calendar_page(request):
 
 def get_google_events(request):
     url = f'https://www.googleapis.com/calendar/v3/calendars/{GOOGLE_CALENDAR_ID}/events'
-    time_min = (datetime.datetime.utcnow() - datetime.timedelta(days=60)).isoformat() + 'Z'
+    time_min = (datetime.datetime.now(timezone.utc) - datetime.timedelta(days=60)).isoformat()
 
     params = {
         'key': GOOGLE_API_KEY,

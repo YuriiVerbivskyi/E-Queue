@@ -8,16 +8,16 @@ pytestmark = pytest.mark.django_db
 
 class TestAuthenticatedAccess:
     def test_access_protected_endpoint_without_token(self, api_client):
-        response = api_client.get(reverse('queue_entries'))
+        response = api_client.get(reverse('entry-list'))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_access_protected_endpoint_with_invalid_token(self, api_client):
         api_client.credentials(HTTP_AUTHORIZATION='Bearer invalid_token')
-        response = api_client.get(reverse('queue_entries'))
+        response = api_client.get(reverse('entry-list'))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_access_protected_endpoint_with_valid_token(self, authenticated_client):
-        response = authenticated_client.get(reverse('queue_entries'))
+        response = authenticated_client.get(reverse('entry-list'))
         assert response.status_code == status.HTTP_200_OK
 
 @pytest.mark.django_db
